@@ -1,18 +1,27 @@
 import time
-import pytest
+
 import allure
+import pytest
+
 from conftest import BASE_URL, extract_item_id, log_api_request, log_api_response
+
 
 class TestCreateItem:
     # ТК-1
     @allure.title("ТК-1: Успешное создание объявления со всеми валидными полями")
-    @allure.description("Проверяет корректность работы POST /api/1/item при передаче всех обязательных полей. Ожидается статус 200 и возврат уникального ID.")
+    @allure.description(
+        "Проверяет корректность работы POST /api/1/item при передаче всех обязательных полей. Ожидается статус 200 и возврат уникального ID."
+    )
     @allure.severity(allure.severity_level.CRITICAL)
     @allure.story("Позитивный сценарий")
     def test_create_valid(self, api_client, valid_payload):
         with allure.step("Формирование и отправка POST запроса"):
             log_api_request("POST", f"{BASE_URL}/api/1/item", payload=valid_payload)
-            resp = api_client.post(f"{BASE_URL}/api/1/item", json=valid_payload, headers={"Content-Type": "application/json"})
+            resp = api_client.post(
+                f"{BASE_URL}/api/1/item",
+                json=valid_payload,
+                headers={"Content-Type": "application/json"},
+            )
             log_api_response(resp)
 
         with allure.step("Проверка статуса ответа 200 OK"):
@@ -21,11 +30,17 @@ class TestCreateItem:
         with allure.step("Валидация структуры ответа и извлечение ID"):
             item_id = extract_item_id(resp.json())
             assert item_id is not None, "ID не найден в ответе"
-            allure.attach(f"Сгенерированный ID: {item_id}", name="Created Item ID", attachment_type=allure.attachment_type.TEXT)
+            allure.attach(
+                f"Сгенерированный ID: {item_id}",
+                name="Created Item ID",
+                attachment_type=allure.attachment_type.TEXT,
+            )
 
     # ТК-2
     @allure.title("ТК-2: Создание объявления с нулевой ценой")
-    @allure.description("Проверяет валидацию поля price. Ожидается отказ в создании (400) или фиксация бага BUG-2.")
+    @allure.description(
+        "Проверяет валидацию поля price. Ожидается отказ в создании (400) или фиксация бага BUG-2."
+    )
     @allure.severity(allure.severity_level.NORMAL)
     def test_create_price_zero(self, api_client, valid_payload):
         payload = {**valid_payload, "price": 0}
@@ -55,24 +70,30 @@ class TestCreateItem:
         payload = {**valid_payload, "price": "15000"}
         resp = api_client.post(f"{BASE_URL}/api/1/item", json=payload)
         # BUG-4
-        assert resp.status_code == 400  
+        assert resp.status_code == 400
 
     # ТК-6
     @allure.title("ТК-6: Создание объявления с отрицательной ценой")
-    @allure.description("Проверяет валидацию поля price. Ожидается отказ в создании (400) или фиксация бага BUG-5.")
+    @allure.description(
+        "Проверяет валидацию поля price. Ожидается отказ в создании (400) или фиксация бага BUG-5."
+    )
     @allure.severity(allure.severity_level.CRITICAL)
     def test_create_negative_price(self, api_client, valid_payload):
         payload = {**valid_payload, "price": -100}
-        
+
         with allure.step("Отправка запроса с price=-100"):
             log_api_request("POST", f"{BASE_URL}/api/1/item", payload=payload)
             resp = api_client.post(f"{BASE_URL}/api/1/item", json=payload)
             log_api_response(resp)
 
         if resp.status_code == 200:
-            allure.attach("Сервер принял отрицательную цену. Заведён баг BUG-5.", name="Bug Confirmation", attachment_type=allure.attachment_type.TEXT)
+            allure.attach(
+                "Сервер принял отрицательную цену. Заведён баг BUG-5.",
+                name="Bug Confirmation",
+                attachment_type=allure.attachment_type.TEXT,
+            )
             pytest.xfail("BUG-5: Сервер принимает отрицательную цену")
-        
+
         assert resp.status_code == 400
 
     # ТК-7
@@ -85,7 +106,11 @@ class TestCreateItem:
 
     # ТК-8
     def test_create_invalid_json(self, api_client):
-        resp = api_client.post(f"{BASE_URL}/api/1/item", data="{broken json}", headers={"Content-Type": "application/json"})
+        resp = api_client.post(
+            f"{BASE_URL}/api/1/item",
+            data="{broken json}",
+            headers={"Content-Type": "application/json"},
+        )
         assert resp.status_code == 400
 
     # ТК-9
@@ -109,7 +134,7 @@ class TestCreateItem:
         payload = {**valid_payload, "price": 9999999999999999999}
         resp = api_client.post(f"{BASE_URL}/api/1/item", json=payload)
         # BUG-8
-        assert resp.status_code == 400  
+        assert resp.status_code == 400
 
     # ТК-24
     def test_xss_injection(self, api_client, valid_payload):
