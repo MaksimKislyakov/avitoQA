@@ -2,8 +2,35 @@ import re
 import random
 import pytest
 import requests
+import allure
+import json
 
 BASE_URL = "https://qa-internship.avito.com"
+
+def log_api_request(method, url, payload=None, headers=None):
+    """Логгирует запрос в Allure"""
+    allure.attach(
+        json.dumps({"method": method, "url": url, "headers": headers or {}}, indent=2),
+        name="Request Payload",
+        attachment_type=allure.attachment_type.JSON
+    )
+
+def log_api_response(response):
+    """Логгирует ответ в Allure"""
+    try:
+        body = response.json()
+    except ValueError:
+        body = response.text
+        
+    allure.attach(
+        json.dumps({
+            "status_code": response.status_code,
+            "headers": dict(response.headers),
+            "body": body
+        }, indent=2, ensure_ascii=False),
+        name=f"Response ({response.status_code})",
+        attachment_type=allure.attachment_type.JSON
+    )
 
 @pytest.fixture(scope="session")
 def api_client():

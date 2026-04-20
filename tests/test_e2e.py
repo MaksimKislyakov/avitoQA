@@ -1,32 +1,38 @@
+import allure
 import pytest
 from conftest import BASE_URL, extract_item_id
 import random
 
 class TestE2E:
     # ТК-23
+    @allure.title("ТК-23: Полный жизненный цикл объявления")
+    @allure.description("Сквозной тест: Создание → Получение по ID → Статистика → Список продавца")
+    @allure.severity(allure.severity_level.BLOCKER)
+    @allure.story("E2E сценарий")
+    @allure.tag("e2e", "smoke")
     def test_full_lifecycle(self, api_client, valid_payload):
-        # 1. Создание
-        post_resp = api_client.post(f"{BASE_URL}/api/1/item", json=valid_payload, headers={"Content-Type": "application/json"})
-        assert post_resp.status_code == 200
-        item_id = extract_item_id(post_resp.json())
-        seller_id = valid_payload["sellerID"]
+        with allure.step("1. Создание объявления через POST /api/1/item"):
+            post_resp = api_client.post(f"{BASE_URL}/api/1/item", json=valid_payload, headers={"Content-Type": "application/json"})
+            assert post_resp.status_code == 200
+            item_id = extract_item_id(post_resp.json())
+            seller_id = valid_payload["sellerID"]
 
-        # 2. Получение по ID
-        get_resp = api_client.get(f"{BASE_URL}/api/1/item/{item_id}")
-        assert get_resp.status_code == 200
+        with allure.step("2. Получение объявления по его ID"):
+            get_resp = api_client.get(f"{BASE_URL}/api/1/item/{item_id}")
+            assert get_resp.status_code == 200
 
-        # 3. Получение статистики
-        stat_resp = api_client.get(f"{BASE_URL}/api/1/statistic/{item_id}")
-        assert stat_resp.status_code == 200
+        with allure.step("3. Получение статистики объявления"):
+            stat_resp = api_client.get(f"{BASE_URL}/api/1/statistic/{item_id}")
+            assert stat_resp.status_code == 200
 
-        # 4. Проверка в списке продавца
-        list_resp = api_client.get(f"{BASE_URL}/api/1/{seller_id}/item")
-        assert list_resp.status_code == 200
-        assert any(item.get("id") == item_id for item in list_resp.json())
-
-        # 5. Удаление
-        del_resp = api_client.delete(f"{BASE_URL}/api/2/item/{item_id}")
-        assert del_resp.status_code == 200
+        with allure.step("4. Проверка наличия объявления в списке продавца"):
+            list_resp = api_client.get(f"{BASE_URL}/api/1/{seller_id}/item")
+            assert list_resp.status_code == 200
+            assert any(item.get("id") == item_id for item in list_resp.json())
+            
+        with allure.step("5. Удаление объявления через DELETE /api/2/item/{item_id}"):
+            del_resp = api_client.delete(f"{BASE_URL}/api/2/item/{item_id}")
+            assert del_resp.status_code == 200
     #ТК-24
     def test_cross_version_consistency(self, api_client, valid_payload):
         # 1. Создаем объявление через API v1
