@@ -46,3 +46,4 @@ def created_item(api_client, valid_payload):
     if not item_id:
         pytest.fail(f"Не удалось извлечь ID из POST ответа: {resp.text}")
     yield {"id": item_id, "payload": valid_payload}
+    api_client.delete(f"{BASE_URL}/api/2/item/{item_id}")

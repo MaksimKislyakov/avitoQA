@@ -25,4 +25,4 @@ class TestSchemaValidation:
         get_resp = api_client.get(f"{BASE_URL}/api/1/item/{item_id}")
         data = get_resp.json()[0]
         expected_fields = {"id", "sellerId", "name", "price", "statistics", "createdAt"}
-        assert expected_fields.issubset(data.keys())
+        assert set(data.keys()) == expected_fields, f"Лишние или недостающие поля: {set(data.keys())}"
